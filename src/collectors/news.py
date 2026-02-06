@@ -2,7 +2,7 @@ from typing import Any
 
 import httpx
 
-from src.collectors.base_collector import BaseCollector, CollectedItem
+from src.collectors.base import BaseCollector, CollectedItem
 from src.config import settings
 from src.logging_config import get_logger
 

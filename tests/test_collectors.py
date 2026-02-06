@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.collectors.base_collector import CollectedItem
+from src.collectors.base import CollectedItem
 from src.collectors import get_collector, COLLECTOR_REGISTRY
 
 
@@ -47,7 +47,7 @@ class TestCollectedItem:
 class TestWeatherCollector:
     @pytest.mark.asyncio
     async def test_fetch_json(self):
-        from src.collectors.weather_collector import WeatherCollector
+        from src.collectors.weather import WeatherCollector
 
         collector = WeatherCollector()
         mock_response = MagicMock()
@@ -84,7 +84,7 @@ class TestWeatherCollector:
 class TestCryptoCollector:
     @pytest.mark.asyncio
     async def test_fetch_trending(self):
-        from src.collectors.crypto_collector import CryptoCollector
+        from src.collectors.crypto import CryptoCollector
 
         collector = CryptoCollector()
         mock_response = MagicMock()
@@ -113,7 +113,7 @@ class TestCryptoCollector:
 class TestRedditCollector:
     @pytest.mark.asyncio
     async def test_fetch_subreddit(self):
-        from src.collectors.reddit_collector import RedditCollector
+        from src.collectors.reddit import RedditCollector
 
         collector = RedditCollector()
         mock_response = MagicMock()
@@ -150,7 +150,7 @@ class TestRedditCollector:
 class TestGitHubCollector:
     @pytest.mark.asyncio
     async def test_fetch_search(self):
-        from src.collectors.github_collector import GitHubCollector
+        from src.collectors.github import GitHubCollector
 
         collector = GitHubCollector()
         mock_response = MagicMock()
@@ -183,7 +183,7 @@ class TestGitHubCollector:
 class TestArxivCollector:
     @pytest.mark.asyncio
     async def test_parse_atom(self):
-        from src.collectors.arxiv_collector import ArxivCollector
+        from src.collectors.arxiv import ArxivCollector
 
         collector = ArxivCollector()
         xml = """<?xml version="1.0" encoding="UTF-8"?>
@@ -211,7 +211,7 @@ class TestArxivCollector:
 class TestStocksCollector:
     @pytest.mark.asyncio
     async def test_fetch_quotes_fallback(self):
-        from src.collectors.stocks_collector import StocksCollector
+        from src.collectors.stocks import StocksCollector
 
         collector = StocksCollector()
         mock_response = MagicMock()

@@ -1,12 +1,12 @@
-from src.collectors.base_collector import BaseCollector, CollectedItem
-from src.collectors.news_collector import NewsCollector, DirectNewsCollector
-from src.collectors.weather_collector import WeatherCollector
-from src.collectors.crypto_collector import CryptoCollector, DexScreenerCollector
-from src.collectors.reddit_collector import RedditCollector
-from src.collectors.github_collector import GitHubCollector
-from src.collectors.arxiv_collector import ArxivCollector
-from src.collectors.stocks_collector import StocksCollector
-from src.collectors.wiki_collector import WikipediaCollector
+from src.collectors.base import BaseCollector, CollectedItem
+from src.collectors.news import NewsCollector, DirectNewsCollector
+from src.collectors.weather import WeatherCollector
+from src.collectors.crypto import CryptoCollector, DexScreenerCollector
+from src.collectors.reddit import RedditCollector
+from src.collectors.github import GitHubCollector
+from src.collectors.arxiv import ArxivCollector
+from src.collectors.stocks import StocksCollector
+from src.collectors.wiki import WikipediaCollector
 
 __all__ = [
     "BaseCollector",

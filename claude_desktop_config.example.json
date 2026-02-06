@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "ai-research-agent": {
-      "command": "python",
-      "args": ["main.py", "mcp"],
-      "cwd": "/path/to/ai-research-agent"
-    }
-  }
-}

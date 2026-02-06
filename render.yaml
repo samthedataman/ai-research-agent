@@ -1,44 +1,16 @@
 services:
   - type: worker
-    name: ai-agent
+    name: telegram-bot
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python main.py agent
+    startCommand: python main.py
     envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
       - key: LLM_PROVIDER
         value: openrouter
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL
         value: deepseek/deepseek-chat
-      - key: RAPIDAPI_KEY
-        sync: false
-      - key: DATABASE_URL
-        fromDatabase:
-          name: agent-db
-          property: connectionString
-
-  - type: web
-    name: ai-agent-api
-    env: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py api
-    envVars:
-      - key: LLM_PROVIDER
-        value: openrouter
-      - key: OPENROUTER_API_KEY
-        sync: false
-      - key: OPENROUTER_MODEL
-        value: deepseek/deepseek-chat
-      - key: RAPIDAPI_KEY
-        sync: false
-      - key: DATABASE_URL
-        fromDatabase:
-          name: agent-db
-          property: connectionString
-
-databases:
-  - name: agent-db
-    plan: free

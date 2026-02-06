@@ -11,7 +11,7 @@ from typing import Any
 
 import httpx
 
-from src.collectors.base_collector import BaseCollector, CollectedItem
+from src.collectors.base import BaseCollector, CollectedItem
 from src.logging_config import get_logger
 
 logger = get_logger(__name__)
