@@ -10,6 +10,7 @@ class TestCollectorRegistry:
         expected = [
             "news", "news_rapidapi", "weather", "crypto", "dexscreener",
             "reddit", "github", "arxiv", "stocks", "wikipedia",
+            "ddg", "ddg_news", "serper", "tmz", "cryptonews",
         ]
         for name in expected:
             assert name in COLLECTOR_REGISTRY, f"Missing collector: {name}"
@@ -235,3 +236,137 @@ class TestStocksCollector:
         items = await collector._fetch_quotes_fallback(["AAPL"])
         assert len(items) == 1
         assert "AAPL" in items[0].title
+
+
+class TestDdgWebCollector:
+    @pytest.mark.asyncio
+    async def test_fetch_web(self):
+        from src.collectors.ddg import DdgWebCollector
+
+        collector = DdgWebCollector()
+        fake_results = [
+            {"title": "Test Result", "body": "Some content", "href": "https://example.com"}
+        ]
+        with patch.object(collector, "_search_sync", return_value=fake_results):
+            items = await collector._fetch("test query")
+        assert len(items) == 1
+        assert items[0].title == "Test Result"
+        assert items[0].source == "ddg_web"
+        assert items[0].url == "https://example.com"
+
+
+class TestDdgNewsCollector:
+    @pytest.mark.asyncio
+    async def test_fetch_news(self):
+        from src.collectors.ddg import DdgNewsCollector
+
+        collector = DdgNewsCollector()
+        fake_results = [
+            {
+                "title": "News Item",
+                "body": "News content",
+                "url": "https://news.example.com",
+                "date": "2024-06-01",
+                "source": "Example News",
+            }
+        ]
+        with patch.object(collector, "_search_news_sync", return_value=fake_results):
+            items = await collector._fetch("crypto")
+        assert len(items) == 1
+        assert items[0].title == "News Item"
+        assert items[0].source == "ddg_news"
+        assert items[0].metadata["news_source"] == "Example News"
+
+
+class TestSerperCollector:
+    @pytest.mark.asyncio
+    async def test_fetch_requires_key(self):
+        from src.collectors.serper import SerperCollector
+
+        collector = SerperCollector()
+        collector.api_key = ""
+        with pytest.raises(ValueError, match="SERPER_API_KEY"):
+            await collector._fetch("test")
+
+    @pytest.mark.asyncio
+    async def test_fetch_search(self):
+        from src.collectors.serper import SerperCollector
+
+        collector = SerperCollector()
+        collector.api_key = "test-key"
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {
+            "organic": [
+                {
+                    "title": "Google Result",
+                    "snippet": "Description text",
+                    "link": "https://example.com",
+                    "position": 1,
+                }
+            ]
+        }
+        collector.client = AsyncMock()
+        collector.client.post = AsyncMock(return_value=mock_response)
+
+        items = await collector._fetch("AI news")
+        assert len(items) == 1
+        assert items[0].title == "Google Result"
+        assert items[0].source == "serper"
+        assert items[0].url == "https://example.com"
+
+
+class TestTmzCollector:
+    @pytest.mark.asyncio
+    async def test_fetch_rss(self):
+        from src.collectors.tmz import TmzCollector
+
+        collector = TmzCollector()
+        rss_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<rss><channel>
+  <item>
+    <title>Celebrity News Story</title>
+    <link>https://tmz.com/story1</link>
+    <pubDate>Mon, 01 Jan 2024 00:00:00 GMT</pubDate>
+    <description>Some celebrity did something</description>
+  </item>
+</channel></rss>"""
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.text = rss_xml
+        collector.client = AsyncMock()
+        collector.client.get = AsyncMock(return_value=mock_response)
+
+        items = await collector._fetch("celebrity")
+        assert len(items) == 1
+        assert "Celebrity" in items[0].title
+        assert items[0].source == "tmz"
+        assert items[0].url == "https://tmz.com/story1"
+
+
+class TestCryptoPanicCollector:
+    @pytest.mark.asyncio
+    async def test_fetch_rss(self):
+        from src.collectors.cryptonews import CryptoPanicCollector
+
+        collector = CryptoPanicCollector()
+        rss_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<rss><channel>
+  <item>
+    <title>Bitcoin hits new high</title>
+    <link>https://cryptopanic.com/news/123</link>
+    <pubDate>Tue, 02 Jan 2024 12:00:00 GMT</pubDate>
+    <description>BTC reaches $100k</description>
+  </item>
+</channel></rss>"""
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.text = rss_xml
+        collector.client = AsyncMock()
+        collector.client.get = AsyncMock(return_value=mock_response)
+
+        items = await collector._fetch("bitcoin")
+        assert len(items) == 1
+        assert "Bitcoin" in items[0].title
+        assert items[0].source == "cryptopanic"
+        assert items[0].metadata["category"] == "crypto_news"

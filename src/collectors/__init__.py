@@ -7,6 +7,10 @@ from src.collectors.github import GitHubCollector
 from src.collectors.arxiv import ArxivCollector
 from src.collectors.stocks import StocksCollector
 from src.collectors.wiki import WikipediaCollector
+from src.collectors.ddg import DdgWebCollector, DdgNewsCollector
+from src.collectors.serper import SerperCollector
+from src.collectors.tmz import TmzCollector
+from src.collectors.cryptonews import CryptoPanicCollector
 
 __all__ = [
     "BaseCollector",
@@ -21,6 +25,11 @@ __all__ = [
     "ArxivCollector",
     "StocksCollector",
     "WikipediaCollector",
+    "DdgWebCollector",
+    "DdgNewsCollector",
+    "SerperCollector",
+    "TmzCollector",
+    "CryptoPanicCollector",
 ]
 
 # Registry of all available collectors for easy discovery
@@ -35,6 +44,11 @@ COLLECTOR_REGISTRY: dict[str, type[BaseCollector]] = {
     "arxiv": ArxivCollector,
     "stocks": StocksCollector,
     "wikipedia": WikipediaCollector,
+    "ddg": DdgWebCollector,
+    "ddg_news": DdgNewsCollector,
+    "serper": SerperCollector,
+    "tmz": TmzCollector,
+    "cryptonews": CryptoPanicCollector,
 }
 
 

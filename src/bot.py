@@ -24,6 +24,11 @@ SOURCE_COMMANDS = {
     "arxiv": "Search research papers (free)",
     "stocks": "Stock quotes from Yahoo Finance (free)",
     "wiki": "Search Wikipedia (free)",
+    "ddg": "DuckDuckGo web search (free)",
+    "ddgnews": "DuckDuckGo news search (free)",
+    "serper": "Google search via Serper (API key)",
+    "tmz": "TMZ celebrity news (free)",
+    "cryptonews": "CryptoPanic crypto news (free)",
 }
 
 
@@ -77,6 +82,11 @@ async def source_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         "arxiv": "arxiv",
         "stocks": "stocks",
         "wiki": "wikipedia",
+        "ddg": "ddg",
+        "ddgnews": "ddg_news",
+        "serper": "serper",
+        "tmz": "tmz",
+        "cryptonews": "cryptonews",
     }
     source = source_map.get(command, command)
 

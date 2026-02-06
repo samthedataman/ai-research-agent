@@ -20,13 +20,15 @@ class Settings(BaseSettings):
     # Optional API keys (collectors work without these)
     rapidapi_key: str = ""
     github_token: str = ""
+    serper_api_key: str = ""
+    brave_api_key: str = ""
 
     # Database
     database_url: str = "sqlite+aiosqlite:///./bot.db"
 
     # Data sources (comma-separated list of active collectors)
-    # Available: news,weather,crypto,dexscreener,reddit,github,arxiv,stocks,wikipedia
-    active_collectors: str = "news,reddit,arxiv,crypto,github,weather,stocks,wikipedia"
+    # Available: news,weather,crypto,dexscreener,reddit,github,arxiv,stocks,wikipedia,ddg,ddg_news,serper,tmz,cryptonews
+    active_collectors: str = "news,reddit,arxiv,crypto,github,weather,stocks,wikipedia,ddg,ddg_news,tmz,cryptonews"
 
     # Collector-specific defaults
     weather_locations: str = "New York,San Francisco,London"
