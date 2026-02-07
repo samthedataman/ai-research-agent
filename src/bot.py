@@ -1,7 +1,15 @@
 """Telegram bot — the user-facing interface for the AI Research Agent."""
 
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+import httpx
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import (
+    Application,
+    CallbackQueryHandler,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 
 from src.collectors import COLLECTOR_REGISTRY
 from src.config import settings
@@ -13,6 +21,10 @@ logger = get_logger(__name__)
 
 # Compile the LangGraph workflow once at module level
 workflow = build_graph()
+
+# Per-user model selection (chat_id → {model, analysis_model})
+user_models: dict[int, str] = {}
+user_analysis_models: dict[int, str] = {}
 
 # Sources available as /commands
 SOURCE_COMMANDS = {
@@ -43,6 +55,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         f"I can search free data sources and summarize results with AI.\n\n"
         f"*Available commands:*\n{sources_list}\n\n"
         f"Or just send me a question and I'll pick the best source automatically!\n\n"
+        f"*Settings:*\n  /model — Switch AI model\n\n"
         f"*Examples:*\n"
         f"  /news artificial intelligence\n"
         f"  /crypto trending\n"
@@ -66,6 +79,89 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "3️⃣ I'll collect data, analyze it with AI, and send you a summary.",
         parse_mode="Markdown",
     )
+
+
+async def _get_ollama_models() -> list[dict]:
+    """Fetch available models from Ollama."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.get(f"{settings.ollama_base_url}/api/tags")
+            resp.raise_for_status()
+            return resp.json().get("models", [])
+    except Exception:
+        return []
+
+
+async def model_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /model — show model picker with two sections."""
+    models = await _get_ollama_models()
+    if not models:
+        await update.message.reply_text("No Ollama models found. Is Ollama running?")
+        return
+
+    chat_id = update.effective_chat.id
+    cur_route = user_models.get(chat_id, settings.ollama_model)
+    cur_analysis = user_analysis_models.get(chat_id, settings.ollama_analysis_model)
+
+    buttons = []
+    # Analysis model buttons (the big one)
+    buttons.append([InlineKeyboardButton("── Analysis Model (quality) ──", callback_data="noop")])
+    for m in models:
+        name = m["name"]
+        size = m.get("details", {}).get("parameter_size", "")
+        check = "✅ " if name == cur_analysis else ""
+        label = f"{check}{name} ({size})" if size else f"{check}{name}"
+        buttons.append([InlineKeyboardButton(label, callback_data=f"amodel:{name}")])
+
+    # Routing model buttons (the fast one)
+    buttons.append([InlineKeyboardButton("── Routing Model (speed) ──", callback_data="noop")])
+    for m in models:
+        name = m["name"]
+        size = m.get("details", {}).get("parameter_size", "")
+        check = "✅ " if name == cur_route else ""
+        label = f"{check}{name} ({size})" if size else f"{check}{name}"
+        buttons.append([InlineKeyboardButton(label, callback_data=f"rmodel:{name}")])
+
+    await update.message.reply_text(
+        f"*Model Settings*\n"
+        f"Analysis: `{cur_analysis}` _(generates the response)_\n"
+        f"Routing: `{cur_route}` _(picks the data source)_",
+        reply_markup=InlineKeyboardMarkup(buttons),
+        parse_mode="Markdown",
+    )
+
+
+async def model_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle inline button press for model selection."""
+    query = update.callback_query
+    data = query.data
+
+    if data == "noop":
+        await query.answer()
+        return
+
+    await query.answer()
+    chat_id = update.effective_chat.id
+
+    if data.startswith("amodel:"):
+        model_name = data.removeprefix("amodel:")
+        user_analysis_models[chat_id] = model_name
+        await query.edit_message_text(
+            f"✅ *Analysis model* switched to `{model_name}`\n\n"
+            f"This larger model will synthesize your results.",
+            parse_mode="Markdown",
+        )
+        logger.info("analysis_model_switched", chat_id=chat_id, model=model_name)
+
+    elif data.startswith("rmodel:"):
+        model_name = data.removeprefix("rmodel:")
+        user_models[chat_id] = model_name
+        await query.edit_message_text(
+            f"✅ *Routing model* switched to `{model_name}`\n\n"
+            f"This fast model picks the best data source.",
+            parse_mode="Markdown",
+        )
+        logger.info("route_model_switched", chat_id=chat_id, model=model_name)
 
 
 async def source_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -124,6 +220,11 @@ async def _run_workflow(
     # Show typing indicator
     await update.message.chat.send_action("typing")
 
+    # Get user's selected models (or defaults)
+    chat_id = update.effective_chat.id
+    model = user_models.get(chat_id, "")
+    analysis_model = user_analysis_models.get(chat_id, "")
+
     state = {
         "user_message": user_message or f"/{source} {query}",
         "source": source or "",
@@ -132,6 +233,8 @@ async def _run_workflow(
         "analysis": "",
         "response": "",
         "error": "",
+        "model": model,
+        "analysis_model": analysis_model,
     }
 
     try:
@@ -177,6 +280,8 @@ async def start_bot() -> None:
     # Register handlers
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("model", model_command))
+    app.add_handler(CallbackQueryHandler(model_callback, pattern=r"^(amodel:|rmodel:|noop)"))
 
     # Register a handler for each source command
     for cmd in SOURCE_COMMANDS:

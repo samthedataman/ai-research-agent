@@ -11,11 +11,28 @@ class Settings(BaseSettings):
 
     # Ollama (free, local)
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.1:8b"
+    ollama_model: str = "llama3.2:latest"
+    ollama_analysis_model: str = "llama3:latest"  # larger model for synthesis
 
     # OpenRouter (cloud, cheap)
     openrouter_api_key: str = ""
     openrouter_model: str = "deepseek/deepseek-chat"
+
+    # WhatsApp Cloud API (Meta) — for 1-on-1 messaging
+    whatsapp_access_token: str = Field(default="", description="WhatsApp Cloud API access token")
+    whatsapp_phone_number_id: str = Field(default="", description="WhatsApp phone number ID")
+    whatsapp_verify_token: str = Field(default="whatsapp-verify-token", description="Webhook verification token")
+    whatsapp_app_secret: str = Field(default="", description="Meta app secret for signature verification")
+
+    # Green API — for WhatsApp group messaging (green-api.com)
+    greenapi_instance_id: str = Field(default="", description="Green API instance ID")
+    greenapi_api_token: str = Field(default="", description="Green API token")
+    greenapi_group_id: str = Field(default="", description="WhatsApp group chat ID (e.g. 120363XXXXX@g.us)")
+
+    # Daily briefing scheduler
+    daily_briefing_hour: int = Field(default=7, description="Hour (UTC) for daily briefing")
+    daily_briefing_minute: int = Field(default=0, description="Minute for daily briefing")
+    daily_briefing_sources: str = Field(default="news,crypto,stocks", description="Comma-separated sources for daily briefing")
 
     # Optional API keys (collectors work without these)
     rapidapi_key: str = ""
@@ -54,6 +71,10 @@ class Settings(BaseSettings):
     @property
     def reddit_subreddits_list(self) -> list[str]:
         return [r.strip() for r in self.reddit_subreddits.split(",") if r.strip()]
+
+    @property
+    def daily_briefing_sources_list(self) -> list[str]:
+        return [s.strip() for s in self.daily_briefing_sources.split(",") if s.strip()]
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

@@ -97,13 +97,15 @@ class OpenRouterClient:
         await self.client.aclose()
 
 
-def get_llm_client() -> LLMClient:
-    """Factory: get the configured LLM client."""
+def get_llm_client(model_override: str | None = None) -> LLMClient:
+    """Factory: get the configured LLM client, optionally overriding the model."""
     if settings.llm_provider == "ollama":
-        return OllamaClient(base_url=settings.ollama_base_url, default_model=settings.ollama_model)
+        model = model_override or settings.ollama_model
+        return OllamaClient(base_url=settings.ollama_base_url, default_model=model)
     elif settings.llm_provider == "openrouter":
         if not settings.openrouter_api_key:
             raise ValueError("OPENROUTER_API_KEY is required when using openrouter provider")
-        return OpenRouterClient(api_key=settings.openrouter_api_key, default_model=settings.openrouter_model)
+        model = model_override or settings.openrouter_model
+        return OpenRouterClient(api_key=settings.openrouter_api_key, default_model=model)
     else:
         raise ValueError(f"Unknown LLM provider: {settings.llm_provider}")
